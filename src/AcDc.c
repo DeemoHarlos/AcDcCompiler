@@ -528,7 +528,7 @@ DataType lookup_type( SymbolTable *table, char *c )
 
 void checkexpression( Expression * expr, SymbolTable * table )
 {
-    char c[65];
+    char c[MAX_LEN];
     if(expr->leftOperand == NULL && expr->rightOperand == NULL){
         switch(expr->v.type){
             case Identifier:

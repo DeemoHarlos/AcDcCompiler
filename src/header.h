@@ -1,6 +1,8 @@
 #ifndef HEADER_H_INCLUDED
 #define HEADER_H_INCLUDED
 
+#define MAX_LEN 65
+
 /******************************************************************************************************************************************
     All enumeration literals
        TokenType : Specify the type of the token scanner returns
@@ -32,7 +34,7 @@ const char RegName[23] = {'a', 'b', 'c', 'd', 'e', 'g', 'h', 'j', 'k',
 /* For scanner */
 typedef struct Token{
     TokenType type;
-    char tok[65];
+    char tok[MAX_LEN];
 }Token;
 
 /*** The following are nodes of the AST. ***/
@@ -40,7 +42,7 @@ typedef struct Token{
 /* For decl production or say one declaration statement */
 typedef struct Declaration{
     DataType type;
-    char name[65];
+    char name[MAX_LEN];
 }Declaration;
 
 /* 
@@ -58,7 +60,7 @@ typedef struct Declarations{
 typedef struct Value{
     ValueType type;
     union{
-        char id[65];                   /* if the node represent the access of the identifier */
+        char id[MAX_LEN];                   /* if the node represent the access of the identifier */
         Operation op;              /* store +, -, *, /, =, type_convert */
         int ivalue;                /* for integer constant in the expression */
         float fvalue;              /* for float constant */
@@ -81,7 +83,7 @@ typedef struct Expression{
 
 /* For one assignment statement */
 typedef struct AssignmentStatement{
-    char id[65];
+    char id[MAX_LEN];
     Expression *expr;
     DataType type;      /* For type checking to store the type of all expression on the right. */
 }AssignmentStatement;
@@ -91,7 +93,7 @@ typedef struct AssignmentStatement{
 typedef struct Statement{
     StmtType type;
     union{
-        char variable[65];              /* print statement */
+        char variable[MAX_LEN];              /* print statement */
         AssignmentStatement assign;
     }stmt;
 }Statement;
@@ -110,7 +112,7 @@ typedef struct Program{
 
 typedef struct Symbol{
     DataType type;
-    char name[65];
+    char name[MAX_LEN];
 } Symbol;
 
 /* For building the symbol table */

@@ -694,7 +694,7 @@ void fprint_op( FILE *target, ValueType op )
     }
 }
 
-void fprint_expr( FILE *target, Expression *expr, SymbolTable *table)
+void fprint_expr( FILE *target, Expression *expr, SymbolTable *table, int * precision )
 {
 
     if(expr->leftOperand == NULL){
@@ -708,7 +708,7 @@ void fprint_expr( FILE *target, Expression *expr, SymbolTable *table)
                 fprintf(target,"%d\n",(expr->v).val.ivalue);
                 break;
             case FloatConst:
-                fprintf(target,"%f\n", (expr->v).val.fvalue);
+                fprintf(target,"%.5f\n", (expr->v).val.fvalue);
                 break;
             default:
                 fprintf(target,"Error In fprint_left_expr. (expr->v).type=%d\n",(expr->v).type);
@@ -716,13 +716,22 @@ void fprint_expr( FILE *target, Expression *expr, SymbolTable *table)
         }
     }
     else{
-        fprint_expr(target, expr->leftOperand, table);
-        if(expr->rightOperand == NULL){
+        fprint_expr(target, expr->leftOperand, table, precision);
+        if (expr->type == Float && *precision != 5) {
             fprintf(target,"5k\n");
+            *precision = 5;
         }
-        else{
-            //	fprint_right_expr(expr->rightOperand);
-            fprint_expr(target, expr->rightOperand, table);
+        if (expr->type == Int && *precision != 0) {
+            fprintf(target,"0k\n");
+            *precision = 0;
+        }
+        if(expr->rightOperand == NULL) { // IntToFloatConvertNode
+            if (*precision != 5) {
+                fprintf(target,"5k\n");
+                *precision = 5;
+            }
+        } else { // arithmetic nodes
+            fprint_expr(target, expr->rightOperand, table, precision);
             fprint_op(target, (expr->v).type);
         }
     }
@@ -732,6 +741,7 @@ void gencode(Program prog, FILE * target, SymbolTable *table)
 {
     Statements *stmts = prog.statements;
     Statement stmt;
+    int precision = 0;
 
     while(stmts != NULL){
         stmt = stmts->first;
@@ -743,18 +753,10 @@ void gencode(Program prog, FILE * target, SymbolTable *table)
                 fprintf(target,"p\n");
                 break;
             case Assignment:
-                fprint_expr(target, stmt.stmt.assign.expr, table);
-                /*
-                   if(stmt.stmt.assign.type == Int){
-                   fprintf(target,"0 k\n");
-                   }
-                   else if(stmt.stmt.assign.type == Float){
-                   fprintf(target,"5 k\n");
-                   }*/
+                fprint_expr(target, stmt.stmt.assign.expr, table, &precision);
                 id = lookup_index(table, stmt.stmt.assign.id);
                 reg = 'a' + id;
                 fprintf(target,"s%c\n",reg);
-                fprintf(target,"0 k\n");
                 break;
         }
         stmts=stmts->rest;

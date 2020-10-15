@@ -4,6 +4,8 @@ f c
 f d
 f e
 f g
+f h
+f j
 
 a = 3
 b = 5
@@ -12,6 +14,10 @@ d = 2.5
 
 e = a + b * c + d
 g = a * b + c * d * a + b * c
+h = a * b / c / d
+j = a + b / c - b / d * a + c
 
 p e
 p g
+p h
+p j

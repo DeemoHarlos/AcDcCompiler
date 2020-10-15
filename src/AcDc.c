@@ -475,10 +475,14 @@ void InitializeTable( SymbolTable *table )
 void add_table( SymbolTable *table, char *name, DataType t )
 {
     int index = lookup_index(table, name);
-    if(index >= 0)
+    if(index >= 0) {
         printf("Error : id %s has been declared\n", name);//error
-    else if(table->count >= 23)
+        exit(1);
+    }
+    else if(table->count >= 23) {
         printf("Error : Exceeds maximum number (23) of variables\n");//error
+        exit(1);
+    }
     else{
         Symbol *sym = &(table->table[table->count++]);
         strcpy(sym->name, name);
@@ -512,7 +516,7 @@ void convertType( Expression * old, DataType type )
 {
     if(old->type == Float && type == Int){
         printf("error : can't convert float to integer\n");
-        return;
+        exit(1);
     }
     if(old->type == Int && type == Float){
         Expression *tmp = (Expression *)malloc( sizeof(Expression) );
@@ -560,8 +564,10 @@ int lookup_index( SymbolTable *table, char *c )
 DataType lookup_type( SymbolTable *table, char *c )
 {
     int id = lookup_index(table, c);
-    if( id < 0 )
+    if( id < 0 ) {
         printf("Error : identifier %s is not declared\n", c);//error
+        exit(1);
+    }
     return table->table[id].type;
 }
 
@@ -611,6 +617,7 @@ void checkstmt( Statement *stmt, SymbolTable * table )
         stmt->stmt.assign.type = lookup_type(table, assign.id);
         if (assign.expr->type == Float && stmt->stmt.assign.type == Int) {
             printf("error : can't convert float to integer\n");
+            exit(1);
         } else {
             convertType(assign.expr, stmt->stmt.assign.type);
         }
@@ -619,7 +626,10 @@ void checkstmt( Statement *stmt, SymbolTable * table )
         printf("print : %s \n",stmt->stmt.variable);
         lookup_type(table, stmt->stmt.variable);
     }
-    else printf("error : statement error\n");//error
+    else {
+        printf("error : statement error\n");//error
+        exit(1);
+    }
 }
 
 void check( Program *program, SymbolTable * table )
@@ -652,7 +662,7 @@ void fprint_op( FILE *target, ValueType op )
             break;
         default:
             fprintf(target,"Error in fprintf_op ValueType = %d\n",op);
-            break;
+            exit(1);
     }
 }
 
@@ -674,7 +684,7 @@ void fprint_expr( FILE *target, Expression *expr, SymbolTable *table)
                 break;
             default:
                 fprintf(target,"Error In fprint_left_expr. (expr->v).type=%d\n",(expr->v).type);
-                break;
+                exit(1);
         }
     }
     else{
@@ -762,7 +772,7 @@ void print_expr(Expression *expr)
                 break;
             default:
                 printf("error ");
-                break;
+                exit(1);
         }
         print_expr(expr->rightOperand);
     }

@@ -22,9 +22,6 @@ typedef enum StmtType { Print, Assignment } StmtType;
 typedef enum ValueType { Identifier, IntConst, FloatConst, PlusNode, MinusNode, MulNode, DivNode, IntToFloatConvertNode } ValueType;
 typedef enum Operation { Plus, Minus, Mul, Div, Assign, IntToFloatConvert } Operation;
 
-const char RegName[23] = {'a', 'b', 'c', 'd', 'e', 'g', 'h', 'j', 'k',
-    'l', 'm', 'n', 'o', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
-
 /**************************************************************************************** 
    All structures to facilitate the processes of 
    scanning, parsing, AST, type-checking, building the symbol table, and code generation.

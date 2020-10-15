@@ -618,7 +618,7 @@ void fprint_expr( FILE *target, Expression *expr, SymbolTable *table)
         switch( (expr->v).type ){
             case Identifier:
                 ;int id = lookup_index(table, (expr->v).val.id);
-                char reg = RegName[id];
+                char reg = 'a' + id;
                 fprintf(target,"l%c\n",reg);
                 break;
             case IntConst:
@@ -655,7 +655,7 @@ void gencode(Program prog, FILE * target, SymbolTable *table)
         switch(stmt.type){
             case Print:
                 ;int id = lookup_index(table, stmt.stmt.variable);
-                char reg = RegName[id];
+                char reg = 'a' + id;
                 fprintf(target,"l%c\n",reg);
                 fprintf(target,"p\n");
                 break;
@@ -669,7 +669,7 @@ void gencode(Program prog, FILE * target, SymbolTable *table)
                    fprintf(target,"5 k\n");
                    }*/
                 id = lookup_index(table, stmt.stmt.assign.id);
-                reg = RegName[id];
+                reg = 'a' + id;
                 fprintf(target,"s%c\n",reg);
                 fprintf(target,"0 k\n");
                 break;

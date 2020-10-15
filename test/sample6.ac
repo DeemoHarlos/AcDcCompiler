@@ -16,8 +16,10 @@ e = a + b * c + d
 g = a * b + c * d * a + b * c
 h = a * b / c / d
 j = a + b / c - b / d * a + c
+k = a / b / c
 
 p e
 p g
 p h
 p j
+p k

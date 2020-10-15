@@ -427,10 +427,7 @@ Program parser( FILE *source )
  *********************************************************/
 void InitializeTable( SymbolTable *table )
 {
-    int i;
-
-    for(i = 0 ; i < 26; i++)
-        table->count = 0;
+    table->count = 0;
 }
 
 void add_table( SymbolTable *table, char *name, DataType t )

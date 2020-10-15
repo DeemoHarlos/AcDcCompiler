@@ -248,14 +248,14 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
             (expr->v).type = PlusNode;
             (expr->v).val.op = Plus;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseTerm(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case MinusOp:
             expr = (Expression *)malloc( sizeof(Expression) );
             (expr->v).type = MinusNode;
             (expr->v).val.op = Minus;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseTerm(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case MulOp:
             expr = (Expression *)malloc( sizeof(Expression) );
@@ -263,12 +263,12 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
             (expr->v).val.op = Mul;
             if ((lvalue->v).type == MulNode || (lvalue->v).type == DivNode) {
                 expr->leftOperand = lvalue;
-                expr->rightOperand = parseTerm(source);
+                expr->rightOperand = parseTerm(source, 0);
                 return parseExpressionTail(source, expr);
             } else {
                 expr->leftOperand = lvalue->rightOperand;
                 lvalue->rightOperand = expr;
-                expr->rightOperand = parseTerm(source);
+                expr->rightOperand = parseTerm(source, 0);
                 return parseExpressionTail(source, lvalue);
             }
         case DivOp:
@@ -277,12 +277,12 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
             (expr->v).val.op = Div;
             if ((lvalue->v).type == MulNode || (lvalue->v).type == DivNode) {
                 expr->leftOperand = lvalue;
-                expr->rightOperand = parseTerm(source);
+                expr->rightOperand = parseTerm(source, 0);
                 return parseExpressionTail(source, expr);
             } else {
                 expr->leftOperand = lvalue->rightOperand;
                 lvalue->rightOperand = expr;
-                expr->rightOperand = parseTerm(source);
+                expr->rightOperand = parseTerm(source, 0);
                 return parseExpressionTail(source, lvalue);
             }
         case Alphabet:
@@ -309,28 +309,28 @@ Expression *parseExpression( FILE *source, Expression *lvalue )
             (expr->v).type = PlusNode;
             (expr->v).val.op = Plus;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseTerm(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case MinusOp:
             expr = (Expression *)malloc( sizeof(Expression) );
             (expr->v).type = MinusNode;
             (expr->v).val.op = Minus;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseTerm(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case MulOp:
             expr = (Expression *)malloc( sizeof(Expression) );
             (expr->v).type = MulNode;
             (expr->v).val.op = Mul;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseTerm(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case DivOp:
             expr = (Expression *)malloc( sizeof(Expression) );
             (expr->v).type = DivNode;
             (expr->v).val.op = Div;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseTerm(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case Alphabet:
         case PrintOp:
@@ -345,7 +345,7 @@ Expression *parseExpression( FILE *source, Expression *lvalue )
     }
 }
 
-Expression *parseTerm( FILE *source )
+Expression *parseTerm( FILE *source , int first)
 {
     Token token;
     Expression *val, *expr;
@@ -357,7 +357,7 @@ Expression *parseTerm( FILE *source )
     if (c == '(') {
         token = scanner(source);
         assert(token.type == LeftParenthesis);
-        val = parseTerm(source);
+        val = parseTerm(source, 1);
         token = scanner(source);
         if (token.type != RightParenthesis) {
             printf("Syntax Error: Expect a right parenthesis ')'\n");
@@ -367,6 +367,8 @@ Expression *parseTerm( FILE *source )
         val = parseValue(source);
     }
     assert(val);
+    if (!first)
+        return val;
     expr = parseExpression(source, val);
     return expr ? expr : val;
 }
@@ -380,7 +382,7 @@ Statement parseStatement( FILE *source, Token token )
         case Alphabet:
             next_token = scanner(source);
             if(next_token.type == AssignmentOp){
-                term = parseTerm(source);
+                term = parseTerm(source, 1);
                 return makeAssignmentNode(token.tok, term);
             }
             else{

@@ -129,7 +129,7 @@ Declarations *parseDeclarations( FILE *source );
 Expression *parseValue( FILE *source );
 Expression *parseExpressionTail( FILE *source, Expression *lvalue );
 Expression *parseExpression( FILE *source, Expression *lvalue );
-Expression *parseTerm( FILE *source );
+Expression *parseTerm( FILE *source, int first );
 Statement makeAssignmentNode( char *id, Expression *term );
 Statement makePrintNode( char *id );
 Statements *makeStatementTree( Statement stmt, Statements *stmts );

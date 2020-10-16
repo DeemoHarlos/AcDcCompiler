@@ -60,7 +60,7 @@ typedef struct Value{
         char id[MAX_LEN];                   /* if the node represent the access of the identifier */
         Operation op;              /* store +, -, *, /, =, type_convert */
         int ivalue;                /* for integer constant in the expression */
-        float fvalue;              /* for float constant */
+        double fvalue;              /* for float constant */
     }val;
 }Value;
 

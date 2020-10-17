@@ -655,6 +655,7 @@ void checkexpression( Expression * expr, SymbolTable * table )
                     expr->v.val.ivalue = left->v.val.ivalue * right->v.val.ivalue;
                     break;
                 case DivNode:
+                    if (right->v.val.ivalue == 0) return;
                     expr->v.val.ivalue = left->v.val.ivalue / right->v.val.ivalue;
                     break;
                 default:
@@ -662,28 +663,6 @@ void checkexpression( Expression * expr, SymbolTable * table )
                     exit(3);
             }
             expr->v.type = IntConst;
-            free(left);
-            free(right);
-            expr->leftOperand = expr->rightOperand = NULL;
-        } else if (left->v.type == FloatConst && right->v.type == FloatConst) {
-            switch (expr->v.type) {
-                case PlusNode:
-                    expr->v.val.fvalue = left->v.val.fvalue + right->v.val.fvalue;
-                    break;
-                case MinusNode:
-                    expr->v.val.fvalue = left->v.val.fvalue - right->v.val.fvalue;
-                    break;
-                case MulNode:
-                    expr->v.val.fvalue = left->v.val.fvalue * right->v.val.fvalue;
-                    break;
-                case DivNode:
-                    expr->v.val.fvalue = left->v.val.fvalue / right->v.val.fvalue;
-                    break;
-                default:
-                    printf("Internal Error: invalid expression tree\n");
-                    exit(1);
-            }
-            expr->v.type = FloatConst;
             free(left);
             free(right);
             expr->leftOperand = expr->rightOperand = NULL;

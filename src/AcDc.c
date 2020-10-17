@@ -520,18 +520,23 @@ void convertType( Expression * old, DataType type )
             printf("convert to float %s \n",old->v.val.id);
         else
             printf("convert to float %d \n", old->v.val.ivalue);
-        tmp->v = old->v;
-        tmp->leftOperand = old->leftOperand;
-        tmp->rightOperand = old->rightOperand;
-        tmp->type = old->type;
+        if (old->v.type == IntConst) { // constant folding
+            old->v.val.fvalue = old->v.val.ivalue;
+            old->v.type = FloatConst;
+        } else {
+            tmp->v = old->v;
+            tmp->leftOperand = old->leftOperand;
+            tmp->rightOperand = old->rightOperand;
+            tmp->type = old->type;
 
-        Value v;
-        v.type = IntToFloatConvertNode;
-        v.val.op = IntToFloatConvert;
-        old->v = v;
-        old->type = Int;
-        old->leftOperand = tmp;
-        old->rightOperand = NULL;
+            Value v;
+            v.type = IntToFloatConvertNode;
+            v.val.op = IntToFloatConvert;
+            old->v = v;
+            old->type = Int;
+            old->leftOperand = tmp;
+            old->rightOperand = NULL;
+        }
     }
 }
 
@@ -583,9 +588,9 @@ void checkexpression( Expression * expr, SymbolTable * table )
                 printf("constant : float\n");
                 expr->type = Float;
                 break;
-                //case PlusNode: case MinusNode: case MulNode: case DivNode:
             default:
-                break;
+                printf("Internal Error: invalid expression tree\n");
+                exit(3);
         }
     }
     else{
@@ -596,9 +601,55 @@ void checkexpression( Expression * expr, SymbolTable * table )
         checkexpression(right, table);
 
         DataType type = generalize(left, right);
-        convertType(left, type);//left->type = type;//converto
-        convertType(right, type);//right->type = type;//converto
+        convertType(left, type);
+        convertType(right, type);
         expr->type = type;
+        // constant folding
+        if (left->v.type == IntConst && right->v.type == IntConst) {
+            switch (expr->v.type) {
+                case PlusNode:
+                    expr->v.val.ivalue = left->v.val.ivalue + right->v.val.ivalue;
+                    break;
+                case MinusNode:
+                    expr->v.val.ivalue = left->v.val.ivalue - right->v.val.ivalue;
+                    break;
+                case MulNode:
+                    expr->v.val.ivalue = left->v.val.ivalue * right->v.val.ivalue;
+                    break;
+                case DivNode:
+                    expr->v.val.ivalue = left->v.val.ivalue / right->v.val.ivalue;
+                    break;
+                default:
+                    printf("Internal Error: invalid expression tree\n");
+                    exit(3);
+            }
+            expr->v.type = IntConst;
+            free(left);
+            free(right);
+            expr->leftOperand = expr->rightOperand = NULL;
+        } else if (left->v.type == FloatConst && right->v.type == FloatConst) {
+            switch (expr->v.type) {
+                case PlusNode:
+                    expr->v.val.fvalue = left->v.val.fvalue + right->v.val.fvalue;
+                    break;
+                case MinusNode:
+                    expr->v.val.fvalue = left->v.val.fvalue - right->v.val.fvalue;
+                    break;
+                case MulNode:
+                    expr->v.val.fvalue = left->v.val.fvalue * right->v.val.fvalue;
+                    break;
+                case DivNode:
+                    expr->v.val.fvalue = left->v.val.fvalue / right->v.val.fvalue;
+                    break;
+                default:
+                    printf("Internal Error: invalid expression tree\n");
+                    exit(1);
+            }
+            expr->v.type = FloatConst;
+            free(left);
+            free(right);
+            expr->leftOperand = expr->rightOperand = NULL;
+        }
     }
 }
 

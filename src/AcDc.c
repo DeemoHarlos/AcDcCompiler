@@ -349,14 +349,8 @@ Expression *parseTerm( FILE *source , int first)
 {
     Token token;
     Expression *val, *expr;
-    int c = fgetc(source);
-
-    while (isspace(c))
-        c = fgetc(source);
-    ungetc(c, source);
-    if (c == '(') {
-        token = scanner(source);
-        assert(token.type == LeftParenthesis);
+    token = scanner(source);
+    if (token.type == LeftParenthesis) {
         val = parseTerm(source, 1);
         token = scanner(source);
         if (token.type != RightParenthesis) {
@@ -364,11 +358,11 @@ Expression *parseTerm( FILE *source , int first)
             exit(1);
         }
     } else {
+        ungets(token.tok, source);
         val = parseValue(source);
     }
     assert(val);
-    if (!first)
-        return val;
+    if (!first) return val;
     expr = parseExpression(source, val);
     return expr ? expr : val;
 }

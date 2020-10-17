@@ -16,7 +16,7 @@
 *******************************************************************************************************************************************/
 
 typedef enum TokenType { FloatDeclaration, IntegerDeclaration, PrintOp, AssignmentOp, PlusOp, MinusOp,
-             MulOp, DivOp, Alphabet, IntValue, FloatValue, EOFsymbol } TokenType;
+             MulOp, DivOp, Alphabet, IntValue, FloatValue, EOFsymbol, LeftParenthesis, RightParenthesis } TokenType;
 typedef enum DataType { Int, Float, Notype }DataType;
 typedef enum StmtType { Print, Assignment } StmtType;
 typedef enum ValueType { Identifier, IntConst, FloatConst, PlusNode, MinusNode, MulNode, DivNode, IntToFloatConvertNode } ValueType;
@@ -129,7 +129,8 @@ Declarations *parseDeclarations( FILE *source );
 Expression *parseValue( FILE *source );
 Expression *parseExpressionTail( FILE *source, Expression *lvalue );
 Expression *parseExpression( FILE *source, Expression *lvalue );
-Statement makeAssignmentNode( char *id, Expression *v, Expression *expr_tail );
+Expression *parseTerm( FILE *source, int first );
+Statement makeAssignmentNode( char *id, Expression *term );
 Statement makePrintNode( char *id );
 Statements *makeStatementTree( Statement stmt, Statements *stmts );
 Statement parseStatement( FILE *source, Token token );
@@ -146,7 +147,7 @@ void checkexpression( Expression * expr, SymbolTable * table );
 void checkstmt( Statement *stmt, SymbolTable * table );
 void check( Program *program, SymbolTable * table);
 void fprint_op( FILE *target, ValueType op );
-void fprint_expr( FILE *target, Expression *expr , SymbolTable *table );
+void fprint_expr( FILE *target, Expression *expr , SymbolTable *table, int *precision );
 void gencode( Program prog, FILE * target , SymbolTable *table );
 
 void print_expr( Expression *expr );

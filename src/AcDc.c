@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <assert.h>
 #include "header.h"
 
 
@@ -141,6 +142,16 @@ Token scanner( FILE *source )
                 token.type = EOFsymbol;
                 token.tok[0] = '\0';
                 return token;
+            case '(':
+                token.type = LeftParenthesis;
+                token.tok[0] = '(';
+                token.tok[1] = '\0';
+                return token;
+            case ')':
+                token.type = RightParenthesis;
+                token.tok[0] = ')';
+                token.tok[1] = '\0';
+                return token;
             default:
                 printf("Invalid character : %c\n", c);
                 exit(1);
@@ -237,14 +248,14 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
             (expr->v).type = PlusNode;
             (expr->v).val.op = Plus;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseValue(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case MinusOp:
             expr = (Expression *)malloc( sizeof(Expression) );
             (expr->v).type = MinusNode;
             (expr->v).val.op = Minus;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseValue(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case MulOp:
             expr = (Expression *)malloc( sizeof(Expression) );
@@ -252,12 +263,12 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
             (expr->v).val.op = Mul;
             if ((lvalue->v).type == MulNode || (lvalue->v).type == DivNode) {
                 expr->leftOperand = lvalue;
-                expr->rightOperand = parseValue(source);
+                expr->rightOperand = parseTerm(source, 0);
                 return parseExpressionTail(source, expr);
             } else {
                 expr->leftOperand = lvalue->rightOperand;
                 lvalue->rightOperand = expr;
-                expr->rightOperand = parseValue(source);
+                expr->rightOperand = parseTerm(source, 0);
                 return parseExpressionTail(source, lvalue);
             }
         case DivOp:
@@ -266,16 +277,17 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
             (expr->v).val.op = Div;
             if ((lvalue->v).type == MulNode || (lvalue->v).type == DivNode) {
                 expr->leftOperand = lvalue;
-                expr->rightOperand = parseValue(source);
+                expr->rightOperand = parseTerm(source, 0);
                 return parseExpressionTail(source, expr);
             } else {
                 expr->leftOperand = lvalue->rightOperand;
                 lvalue->rightOperand = expr;
-                expr->rightOperand = parseValue(source);
+                expr->rightOperand = parseTerm(source, 0);
                 return parseExpressionTail(source, lvalue);
             }
         case Alphabet:
         case PrintOp:
+        case RightParenthesis:
             ungets(token.tok, source);
             return lvalue;
         case EOFsymbol:
@@ -297,31 +309,32 @@ Expression *parseExpression( FILE *source, Expression *lvalue )
             (expr->v).type = PlusNode;
             (expr->v).val.op = Plus;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseValue(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case MinusOp:
             expr = (Expression *)malloc( sizeof(Expression) );
             (expr->v).type = MinusNode;
             (expr->v).val.op = Minus;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseValue(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case MulOp:
             expr = (Expression *)malloc( sizeof(Expression) );
             (expr->v).type = MulNode;
             (expr->v).val.op = Mul;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseValue(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case DivOp:
             expr = (Expression *)malloc( sizeof(Expression) );
             (expr->v).type = DivNode;
             (expr->v).val.op = Div;
             expr->leftOperand = lvalue;
-            expr->rightOperand = parseValue(source);
+            expr->rightOperand = parseTerm(source, 0);
             return parseExpressionTail(source, expr);
         case Alphabet:
         case PrintOp:
+        case RightParenthesis:
             ungets(token.tok, source);
             return NULL;
         case EOFsymbol:
@@ -332,18 +345,39 @@ Expression *parseExpression( FILE *source, Expression *lvalue )
     }
 }
 
+Expression *parseTerm( FILE *source , int first)
+{
+    Token token;
+    Expression *val, *expr;
+    token = scanner(source);
+    if (token.type == LeftParenthesis) {
+        val = parseTerm(source, 1);
+        token = scanner(source);
+        if (token.type != RightParenthesis) {
+            printf("Syntax Error: Expect a right parenthesis ')'\n");
+            exit(1);
+        }
+    } else {
+        ungets(token.tok, source);
+        val = parseValue(source);
+    }
+    assert(val);
+    if (!first) return val;
+    expr = parseExpression(source, val);
+    return expr ? expr : val;
+}
+
 Statement parseStatement( FILE *source, Token token )
 {
     Token next_token;
-    Expression *value, *expr;
+    Expression *term;
 
     switch(token.type){
         case Alphabet:
             next_token = scanner(source);
             if(next_token.type == AssignmentOp){
-                value = parseValue(source);
-                expr = parseExpression(source, value);
-                return makeAssignmentNode(token.tok, value, expr);
+                term = parseTerm(source, 1);
+                return makeAssignmentNode(token.tok, term);
             }
             else{
                 printf("Syntax Error: Expect an assignment op %s\n", next_token.tok);
@@ -418,17 +452,14 @@ Declarations *makeDeclarationTree( Declaration decl, Declarations *decls )
 }
 
 
-Statement makeAssignmentNode( char *id, Expression *v, Expression *expr_tail )
+Statement makeAssignmentNode( char *id, Expression *term )
 {
     Statement stmt;
     AssignmentStatement assign;
 
     stmt.type = Assignment;
     strcpy(assign.id, id);
-    if(expr_tail == NULL)
-        assign.expr = v;
-    else
-        assign.expr = expr_tail;
+    assign.expr = term;
     stmt.stmt.assign = assign;
 
     return stmt;
@@ -572,6 +603,7 @@ DataType lookup_type( SymbolTable *table, char *c )
 
 void checkexpression( Expression * expr, SymbolTable * table )
 {
+    assert(expr);
     char c[MAX_LEN];
     if(expr->leftOperand == NULL && expr->rightOperand == NULL){
         switch(expr->v.type){
@@ -707,7 +739,7 @@ void fprint_op( FILE *target, ValueType op )
     }
 }
 
-void fprint_expr( FILE *target, Expression *expr, SymbolTable *table)
+void fprint_expr( FILE *target, Expression *expr, SymbolTable *table, int * precision )
 {
 
     if(expr->leftOperand == NULL){
@@ -721,7 +753,7 @@ void fprint_expr( FILE *target, Expression *expr, SymbolTable *table)
                 fprintf(target,"%d\n",(expr->v).val.ivalue);
                 break;
             case FloatConst:
-                fprintf(target,"%f\n", (expr->v).val.fvalue);
+                fprintf(target,"%.5f\n", (expr->v).val.fvalue);
                 break;
             default:
                 fprintf(target,"Error In fprint_left_expr. (expr->v).type=%d\n",(expr->v).type);
@@ -729,13 +761,22 @@ void fprint_expr( FILE *target, Expression *expr, SymbolTable *table)
         }
     }
     else{
-        fprint_expr(target, expr->leftOperand, table);
-        if(expr->rightOperand == NULL){
+        fprint_expr(target, expr->leftOperand, table, precision);
+        if (expr->type == Float && *precision != 5) {
             fprintf(target,"5k\n");
+            *precision = 5;
         }
-        else{
-            //	fprint_right_expr(expr->rightOperand);
-            fprint_expr(target, expr->rightOperand, table);
+        if (expr->type == Int && *precision != 0) {
+            fprintf(target,"0k\n");
+            *precision = 0;
+        }
+        if(expr->rightOperand == NULL) { // IntToFloatConvertNode
+            if (*precision != 5) {
+                fprintf(target,"5k\n");
+                *precision = 5;
+            }
+        } else { // arithmetic nodes
+            fprint_expr(target, expr->rightOperand, table, precision);
             fprint_op(target, (expr->v).type);
         }
     }
@@ -745,6 +786,7 @@ void gencode(Program prog, FILE * target, SymbolTable *table)
 {
     Statements *stmts = prog.statements;
     Statement stmt;
+    int precision = 0;
 
     while(stmts != NULL){
         stmt = stmts->first;
@@ -756,18 +798,10 @@ void gencode(Program prog, FILE * target, SymbolTable *table)
                 fprintf(target,"p\n");
                 break;
             case Assignment:
-                fprint_expr(target, stmt.stmt.assign.expr, table);
-                /*
-                   if(stmt.stmt.assign.type == Int){
-                   fprintf(target,"0 k\n");
-                   }
-                   else if(stmt.stmt.assign.type == Float){
-                   fprintf(target,"5 k\n");
-                   }*/
+                fprint_expr(target, stmt.stmt.assign.expr, table, &precision);
                 id = lookup_index(table, stmt.stmt.assign.id);
                 reg = 'a' + id;
                 fprintf(target,"s%c\n",reg);
-                fprintf(target,"0 k\n");
                 break;
         }
         stmts=stmts->rest;

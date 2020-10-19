@@ -3,6 +3,8 @@
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
+#include <stdint.h>
+#include <limits.h>
 #include "header.h"
 
 
@@ -644,18 +646,27 @@ void checkexpression( Expression * expr, SymbolTable * table )
         expr->type = type;
         // constant folding
         if (left->v.type == IntConst && right->v.type == IntConst) {
+            int64_t res;
             switch (expr->v.type) {
                 case PlusNode:
+                    res = (int64_t)left->v.val.ivalue + (int64_t)right->v.val.ivalue;
+                    if (res < INT_MIN || res > INT_MAX) return;
                     expr->v.val.ivalue = left->v.val.ivalue + right->v.val.ivalue;
                     break;
                 case MinusNode:
+                    res = (int64_t)left->v.val.ivalue - (int64_t)right->v.val.ivalue;
+                    if (res < INT_MIN || res > INT_MAX) return;
                     expr->v.val.ivalue = left->v.val.ivalue - right->v.val.ivalue;
                     break;
                 case MulNode:
+                    res = (int64_t)left->v.val.ivalue * (int64_t)right->v.val.ivalue;
+                    if (res < INT_MIN || res > INT_MAX) return;
                     expr->v.val.ivalue = left->v.val.ivalue * right->v.val.ivalue;
                     break;
                 case DivNode:
                     if (right->v.val.ivalue == 0) return;
+                    res = (int64_t)left->v.val.ivalue / (int64_t)right->v.val.ivalue;
+                    if (res < INT_MIN || res > INT_MAX) return;
                     expr->v.val.ivalue = left->v.val.ivalue / right->v.val.ivalue;
                     break;
                 default:
